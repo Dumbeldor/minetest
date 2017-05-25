@@ -117,6 +117,10 @@ InventoryAction *InventoryAction::deSerialize(std::istream &is)
 		a = new IDropAction(is);
 	} else if (type == "Craft") {
 		a = new ICraftAction(is);
+	} else if (type == "Split") {
+		a = new ISplitAction(is, false);
+	} else if (type == "MoveSomewhere") {
+		a = new ISplitAction(is, true);
 	}
 
 	return a;
@@ -522,6 +526,11 @@ void IMoveAction::clientApply(InventoryManager *mgr, IGameDef *gamedef)
 	if (inv_from != inv_to)
 		mgr->setInventoryModified(to_inv);
 }
+
+/*
+ * ISplitAction
+ */
+
 
 /*
 	IDropAction

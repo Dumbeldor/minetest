@@ -1037,6 +1037,61 @@ void Server::handleCommand_InventoryAction(NetworkPacket* pkt)
 			return;
 		}
 	}
+	/*
+	 	Handle restrictions and special cases of the split action
+	 */
+	else if (a->getType() == IAction::Split) {
+		ISplitAction *sa = (ISplitAction*)a;
+
+		sa->from_inv.applyCurrentPlayer(player->getName());
+		sa->to_inv.applyCurrentPlayer(player->getName());
+
+		setInventoryModified(sa->from_inv, false);
+		setInventoryModified(sa->to_inv, false);
+
+		bool from_inv_is_current_player =
+				(sa->from_inv.type == InventoryLocation::PLAYER) &&
+				(sa->from_inv.name == player->getName());
+
+		bool to_inv_is_current_player =
+				(sa->to_inv.type == InventoryLocation::PLAYER) &&
+				(sa->to_inv.name == player->getName());
+
+		/*
+			Disable moving items out of craftpreview
+		*/
+		if (sa->from_list == "craftpreview") {
+			infostream << "Ignoring IMoveAction from "
+					   << (sa->from_inv.dump()) << ":" << sa->from_list
+					   << " to " << (sa->to_inv.dump()) << ":" << sa->to_list
+					   << " because src is " << sa->from_list << std::endl;
+			delete a;
+			return;
+		}
+
+		/*
+			Disable moving items into craftresult and craftpreview
+		*/
+		if (sa->to_list == "craftpreview" || sa->to_list == "craftresult") {
+			infostream << "Ignoring IMoveAction from "
+					   << (sa->from_inv.dump()) << ":" << sa->from_list
+					   << " to " << (sa->to_inv.dump()) << ":" << sa->to_list
+					   << " because dst is " << sa->to_list << std::endl;
+			delete a;
+			return;
+		}
+
+		// Disallow moving items in elsewhere than player's inventory
+		// if not allowed to interact
+		if (!checkPriv(player->getName(), "interact") &&
+			(!from_inv_is_current_player ||
+			 !to_inv_is_current_player)) {
+			infostream << "Cannot move outside of player's inventory: "
+					   << "No interact privilege" << std::endl;
+			delete a;
+			return;
+		}
+	}
 
 	// Do the action
 	a->apply(this, playersao, this);

@@ -120,7 +120,8 @@ public:
 enum class IAction : u16 {
 	Move,
 	Drop,
-	Craft
+	Craft,
+	Split
 };
 
 struct InventoryAction
@@ -180,6 +181,38 @@ struct IMoveAction : public InventoryAction
 	void apply(InventoryManager *mgr, ServerActiveObject *player, IGameDef *gamedef);
 
 	void clientApply(InventoryManager *mgr, IGameDef *gamedef);
+};
+
+struct ISplitAction : public IMoveAction
+{
+	ISplitAction() {}
+
+	ISplitAction(std::istream &is, bool somewhere) : IMoveAction(is, somewhere) {};
+
+	IAction getType() const
+	{
+		return IAction::Split;
+	}
+
+	void serialize(std::ostream &os) const
+	{
+		if (!move_somewhere)
+			os << "Split ";
+		else
+			os << "SplitSomewhere ";
+		os << count << " ";
+		os << from_inv.dump() << " ";
+		os << from_list << " ";
+		os << from_i << " ";
+		os << to_inv.dump() << " ";
+		os << to_list;
+		if (!move_somewhere)
+			os << " " << to_i;
+	}
+
+	//void apply(InventoryManager *mgr, ServerActiveObject *player, IGameDef *gamedef);
+
+	//void clientApply(InventoryManager *mgr, IGameDef *gamedef);
 };
 
 struct IDropAction : public InventoryAction
